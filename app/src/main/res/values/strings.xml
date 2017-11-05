@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Streamer</string>
+    <string name="start_server">Start Server</string>
+    <string name="start_client">Start Client</string>
+    <string name="open_for_connection">Open for Connection</string>
+    <string name="start">Start</string>
+    <string name="connect_to_server">Connect to server</string>
+</resources>
