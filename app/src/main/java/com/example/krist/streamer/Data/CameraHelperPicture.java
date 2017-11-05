@@ -20,7 +20,6 @@ import android.media.ImageReader;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.ParcelFileDescriptor;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.util.Size;
@@ -76,7 +75,7 @@ public class CameraHelperPicture {
         callback = onImageCaptured;
     }
 
-    public void takePicture(ParcelFileDescriptor pfd) {
+    public void takePicture() {
         if(null == cameraDevice) {
             Log.e(TAG, "cameraDevice is null");
             return;
@@ -93,17 +92,15 @@ public class CameraHelperPicture {
             if (jpegSizes != null && 0 < jpegSizes.length) {
                 width = jpegSizes[jpegSizes.length-2].getWidth();
                 height = jpegSizes[jpegSizes.length-2].getHeight();
-                System.out.println(width);
-                System.out.println(height);
             }
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 5);
+            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
             List<Surface> outputSurfaces = new ArrayList<>(2);
             outputSurfaces.add(reader.getSurface());
             final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             // Orientation
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(270));
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(0));
             final File file = new File(Environment.getExternalStorageDirectory()+"/pic.png");
             ImageReader.OnImageAvailableListener readerListener = reader1 -> onImageCaptured(reader1.acquireLatestImage());
             ImageReader.OnImageAvailableListener readerListener_old = new ImageReader.OnImageAvailableListener() {
@@ -205,6 +202,7 @@ public class CameraHelperPicture {
         @Override
         public void onDisconnected(CameraDevice camera) {
             cameraDevice.close();
+            openCamera();
         }
         @Override
         public void onError(CameraDevice camera, int error) {

@@ -17,7 +17,7 @@ public class ConnectToServer extends Thread {
     private boolean running = false;
 
     public interface OnConnected {
-        void onConnected(boolean connected);
+        void onConnected(Socket socket);
     }
 
     private OnConnected callback;
@@ -36,7 +36,7 @@ public class ConnectToServer extends Thread {
             try {
                 Socket socket = new Socket();
                 socket.connect(address);
-                onConnect(socket.isConnected());
+                onConnect(socket);
                 running = false;
             } catch(ConnectException e){
                 try {
@@ -56,9 +56,9 @@ public class ConnectToServer extends Thread {
         Log.e(TAG, "stopConnecting called");
     }
 
-    private void onConnect(boolean connected) {
+    private void onConnect(Socket socket) {
         if (callback != null) {
-            callback.onConnected(connected);
+            callback.onConnected(socket);
         }
     }
 }

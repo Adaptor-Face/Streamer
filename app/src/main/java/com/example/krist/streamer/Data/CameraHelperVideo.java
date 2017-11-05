@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -23,7 +22,6 @@ import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
-import android.view.TextureView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -38,7 +36,6 @@ import java.util.List;
 
 public class CameraHelperVideo {
     private MediaRecorder mMediaRecorder;
-    private final TextureView textureView;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private final String TAG = "STREAMER";
     private final Activity activity;
@@ -68,8 +65,7 @@ public class CameraHelperVideo {
         void onImageCaptured(Image image);
     }
 
-    public CameraHelperVideo(Activity activity, TextureView textureView) {
-        this.textureView = textureView;
+    public CameraHelperVideo(Activity activity) {
         this.activity = activity;
         openCamera();
     }
@@ -87,9 +83,6 @@ public class CameraHelperVideo {
             mMediaRecorder = new MediaRecorder();
             setUpMediaRecorder(imageDimension, pfd);
             List<Surface> surfaces = new ArrayList<>();
-            SurfaceTexture texture = textureView.getSurfaceTexture();
-            Surface preview = new Surface(texture);
-            surfaces.add(preview);
             // Set up Surface for the MediaRecorder
             Surface recorderSurface = mMediaRecorder.getSurface();
             surfaces.add(recorderSurface);
