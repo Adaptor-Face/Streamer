@@ -9,7 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
 /**
- * Created by krist on 2017-11-06.
+ * class found on StackOverflow: https://stackoverflow.com/questions/44022062/converting-yuv-420-888-to-jpeg-and-saving-file-results-distorted-image
  */
 
 public final class ImageUtils {
