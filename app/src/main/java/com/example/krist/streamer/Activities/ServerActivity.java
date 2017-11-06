@@ -30,9 +30,10 @@ public class ServerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_server);
         findViewById(R.id.activity_server_connection_button).setOnClickListener(c -> listenForConnection((Button) c));
         ch = new CameraHelperPicture(this);
+        listenForConnection(findViewById(R.id.activity_server_connection_button));
 //        chv = new CameraHelperVideo(this);
 //        chm = new CameraHelperMediaCodec(this,findViewById(R.id.activity_server_cam_preview));
-        findViewById(R.id.activity_server_start_button).setOnClickListener(c -> takePicture());
+//        findViewById(R.id.activity_server_start_button).setOnClickListener(c -> takePicture());
     }
 
     private void takePicture() {
@@ -65,6 +66,7 @@ public class ServerActivity extends AppCompatActivity {
         this.socket = socket;
         scl.stopServer();
         scl = null;
+        runOnUiThread(()->takePicture());
     }
 
 
