@@ -18,8 +18,6 @@ public final class ImageUtils {
         if (image.getFormat() == ImageFormat.JPEG) {
             ByteBuffer buffer = image.getPlanes()[0].getBuffer();
             byte[] data = new byte[buffer.capacity()];
-            System.out.println(buffer.capacity());
-            System.out.println(data.length);
             buffer.get(data);
             return data;
         } else if (image.getFormat() == ImageFormat.YUV_420_888) {
