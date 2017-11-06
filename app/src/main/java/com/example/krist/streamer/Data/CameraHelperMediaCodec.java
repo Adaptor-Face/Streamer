@@ -17,14 +17,18 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.MediaCodec;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
+import android.view.TextureView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,13 +37,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Created by krist on 2017-11-05.
  */
 
-public class CameraHelperPicture {
+public class CameraHelperMediaCodec {
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private final String TAG = "STREAMER";
     private final Activity activity;
@@ -53,6 +58,8 @@ public class CameraHelperPicture {
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
+
+    private final TextureView textureView;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     private CameraDevice cameraDevice;
@@ -66,9 +73,10 @@ public class CameraHelperPicture {
         void onImageCaptured(Image image);
     }
 
-    public CameraHelperPicture(Activity activity) {
+    public CameraHelperMediaCodec(Activity activity, TextureView textureView) {
+        this.textureView = textureView;
+        textureView.setSurfaceTextureListener(textureListener);
         this.activity = activity;
-        openCamera();
     }
 
     public void setCallback(OnImageCaptured onImageCaptured){
@@ -147,7 +155,7 @@ public class CameraHelperPicture {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
                     try {
-                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
+                        session.setRepeatingRequest(captureBuilder.build(), captureListener, mBackgroundHandler);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }
@@ -180,6 +188,37 @@ public class CameraHelperPicture {
         }
         Log.e(TAG, "openCamera X");
     }
+    protected void createCameraPreview() {
+        try {
+            SurfaceTexture texture = textureView.getSurfaceTexture();
+            assert texture != null;
+            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+            Surface surface = new Surface(texture);
+            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder.addTarget(surface);
+            MediaCodec encoder = MediaCodecHelper.setUpMediaEncoder(surface);
+            cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback(){
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    //The camera is already closed
+                    if (null == cameraDevice) {
+                        return;
+                    }
+                    // When the session is ready, we start displaying the preview.
+                    cameraCaptureSessions = cameraCaptureSession;
+                    updatePreview();
+                }
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    Toast.makeText(activity, "Configuration change", Toast.LENGTH_SHORT).show();
+                }
+            }, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     protected void updatePreview() {
         if(null == cameraDevice) {
             Log.e(TAG, "updatePreview error, return");
@@ -197,12 +236,11 @@ public class CameraHelperPicture {
             //This is called when the camera is open
             Log.e(TAG, "onOpened");
             cameraDevice = camera;
-            //createCameraPreview();
+            createCameraPreview();
         }
         @Override
         public void onDisconnected(CameraDevice camera) {
             cameraDevice.close();
-            openCamera();
         }
         @Override
         public void onError(CameraDevice camera, int error) {
@@ -220,4 +258,22 @@ public class CameraHelperPicture {
             }
         }
     }
+    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+            //open your camera here
+            openCamera();
+        }
+        @Override
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+            // Transform you image captured size according to the surface width and height
+        }
+        @Override
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            return false;
+        }
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+        }
+    };
 }

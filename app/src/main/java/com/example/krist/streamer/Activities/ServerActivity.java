@@ -1,20 +1,24 @@
 package com.example.krist.streamer.Activities;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Button;
+import android.widget.ImageView;
 
+import com.example.krist.streamer.Data.CameraHelperMediaCodec;
 import com.example.krist.streamer.Data.CameraHelperPicture;
 import com.example.krist.streamer.Data.CameraHelperVideo;
 import com.example.krist.streamer.Helpers.ServerConnectListener;
 import com.example.krist.streamer.R;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class ServerActivity extends AppCompatActivity {
     private ServerConnectListener scl;
@@ -22,14 +26,18 @@ public class ServerActivity extends AppCompatActivity {
     CameraHelperVideo chv;
     boolean recording = false;
     ParcelFileDescriptor pfd;
+    private CameraHelperMediaCodec chm;
+    private Socket socket;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server);
-        findViewById(R.id.activity_server_connection_button).setOnClickListener(c-> listenForConnection((Button) c));
+        findViewById(R.id.activity_server_connection_button).setOnClickListener(c -> listenForConnection((Button) c));
         ch = new CameraHelperPicture(this);
-        chv = new CameraHelperVideo(this);
-        findViewById(R.id.activity_server_start_button).setOnClickListener(c-> takePicture());
+//        chv = new CameraHelperVideo(this);
+//        chm = new CameraHelperMediaCodec(this,findViewById(R.id.activity_server_cam_preview));
+        findViewById(R.id.activity_server_start_button).setOnClickListener(c -> takePicture());
     }
 
     private void takePicture() {
@@ -45,35 +53,54 @@ public class ServerActivity extends AppCompatActivity {
             ByteBuffer buffer = image.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.capacity()];
             buffer.get(bytes);
-            OutputStream output = null;
+            System.out.println(bytes.length);
+            int counter = 0;
+            for (byte b : bytes) {
+                System.out.print(b);
+                counter++;
+                if((counter % 500) == 0){
+                    System.out.println();
+                }
+            }
+            System.out.println();
+            String string = Arrays.toString(bytes);
+            System.out.println(string);
+            String[] str = string.substring(1, string.length()-1).replace(" ", "").split(",");
+            System.out.println(str.length);
+            for(String s : str){
+                System.out.print(s);
+            }
+            System.out.println();
+            Bitmap map = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            ((ImageView) findViewById(R.id.activity_server_cam_preview)).setImageBitmap(map);
+            PrintStream output = null;
             try {
-                output = new FileOutputStream(pfd.getFileDescriptor());
-                output.write(bytes);
+                output = new PrintStream(socket.getOutputStream());
+                output.println(string);
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 if (null != output) {
-                    try {
-                        output.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    output.close();
                 }
             }
         });
         ch.takePicture();
     }
 
-    private void record(){
-        if(recording){
+    private void chm() {
+        chm.takePicture();
+    }
+
+    private void record() {
+        if (recording) {
             chv.stopRecordingVideo();
-            recording= false;
+            recording = false;
         } else {
             chv.starRecordingVideo(pfd);
             recording = true;
         }
     }
-
 
 
     private void listenForConnection(Button v) {
@@ -85,12 +112,13 @@ public class ServerActivity extends AppCompatActivity {
     private void prepareToStream(Socket socket) {
         System.out.println("Connected to " + socket.getInetAddress());
         pfd = ParcelFileDescriptor.fromSocket(socket);
+        this.socket = socket;
     }
 
 
     @Override
     protected void onStop() {
-        if(scl != null) {
+        if (scl != null) {
             scl.stopServer();
         }
         super.onStop();
