@@ -47,22 +47,24 @@ public class CameraHelperPicture {
     private final int FRONT_CAM = 1;
     private final int CAM_TO_USE = BACK_CAM;
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
         ORIENTATIONS.append(Surface.ROTATION_90, 0);
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
+
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     private CameraDevice cameraDevice;
-    private Size imageDimension = new Size(640,480);
+    private Size imageDimension = new Size(640, 480);
     protected CameraCaptureSession cameraCaptureSessions;
     protected CaptureRequest.Builder captureRequestBuilder;
     private String cameraId;
     private OnImageCaptured callback;
 
-    public interface OnImageCaptured{
+    public interface OnImageCaptured {
         void onImageCaptured(Image image);
     }
 
@@ -71,12 +73,12 @@ public class CameraHelperPicture {
         openCamera();
     }
 
-    public void setCallback(OnImageCaptured onImageCaptured){
+    public void setCallback(OnImageCaptured onImageCaptured) {
         callback = onImageCaptured;
     }
 
     public void takePicture() {
-        if(null == cameraDevice) {
+        if (null == cameraDevice) {
             Log.e(TAG, "cameraDevice is null");
             return;
         }
@@ -85,15 +87,15 @@ public class CameraHelperPicture {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
             Size[] jpegSizes = null;
             if (characteristics != null) {
-                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.YUV_420_888);
             }
             int width = 640;
             int height = 480;
             if (jpegSizes != null && 0 < jpegSizes.length) {
-                width = jpegSizes[jpegSizes.length-2].getWidth();
-                height = jpegSizes[jpegSizes.length-2].getHeight();
+                width = jpegSizes[jpegSizes.length - 2].getWidth();
+                height = jpegSizes[jpegSizes.length - 2].getHeight();
             }
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
+            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 2);
             List<Surface> outputSurfaces = new ArrayList<>(2);
             outputSurfaces.add(reader.getSurface());
             final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
@@ -101,7 +103,7 @@ public class CameraHelperPicture {
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             // Orientation
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(0));
-            final File file = new File(Environment.getExternalStorageDirectory()+"/pic.png");
+            final File file = new File(Environment.getExternalStorageDirectory() + "/pic.png");
             ImageReader.OnImageAvailableListener readerListener = reader1 -> onImageCaptured(reader1.acquireLatestImage());
             ImageReader.OnImageAvailableListener readerListener_old = new ImageReader.OnImageAvailableListener() {
                 @Override
@@ -123,6 +125,7 @@ public class CameraHelperPicture {
                         }
                     }
                 }
+
                 private void save(byte[] bytes) throws IOException {
                     OutputStream output = null;
                     try {
@@ -152,6 +155,7 @@ public class CameraHelperPicture {
                         e.printStackTrace();
                     }
                 }
+
                 @Override
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
@@ -160,6 +164,7 @@ public class CameraHelperPicture {
             e.printStackTrace();
         }
     }
+
     private void openCamera() {
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         Log.e(TAG, "is camera open");
@@ -180,8 +185,9 @@ public class CameraHelperPicture {
         }
         Log.e(TAG, "openCamera X");
     }
+
     protected void updatePreview() {
-        if(null == cameraDevice) {
+        if (null == cameraDevice) {
             Log.e(TAG, "updatePreview error, return");
         }
         captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
@@ -191,6 +197,7 @@ public class CameraHelperPicture {
             e.printStackTrace();
         }
     }
+
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(CameraDevice camera) {
@@ -199,11 +206,13 @@ public class CameraHelperPicture {
             cameraDevice = camera;
             //createCameraPreview();
         }
+
         @Override
         public void onDisconnected(CameraDevice camera) {
             cameraDevice.close();
             openCamera();
         }
+
         @Override
         public void onError(CameraDevice camera, int error) {
             cameraDevice.close();
@@ -211,12 +220,15 @@ public class CameraHelperPicture {
         }
     };
 
-    private void onImageCaptured(Image image){
-        if(callback != null){
-            try {
-                callback.onImageCaptured(image);
-            }finally {
-                image.close();
+    private void onImageCaptured(Image image) {
+
+        if (image != null) {
+            if (callback != null) {
+                try {
+                    callback.onImageCaptured(image);
+                } finally {
+                    image.close();
+                }
             }
         }
     }
