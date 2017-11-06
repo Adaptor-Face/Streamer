@@ -23,7 +23,7 @@ import static java.lang.Thread.sleep;
 
 public class ClientActivity extends AppCompatActivity {
     private ConnectToServer cts;
-    private final String IP = "192.168.0.125";
+    private final String IP = "10.0.0.95";
     private final int port = 6672;
     private ImageView display;
     private Socket socket;
@@ -55,32 +55,14 @@ public class ClientActivity extends AppCompatActivity {
         BufferedReader in = null;
         try {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            String img = in.readLine();
-            System.out.println(img);
-            String[] str = img.substring(1, img.length() - 1).replace(" ", "").split(",");
-            System.out.println(str.length);
-            int counter = 0;
-            for (String s : str) {
-                System.out.print(s);
-                counter++;
-                if((counter % 500) == 0){
-                    System.out.println();
-                }
-            }
-            System.out.println();
-            byte[] bytes = new byte[str.length];
-
-            for (int i=0, len=bytes.length; i<len; i++) {
-                bytes[i] = Byte.parseByte(str[i].trim());
-            }
-            for (byte b : bytes) {
-                System.out.print(b);
-            }
-            System.out.println();
             while (true) {
-                sleep(1999);
-                Bitmap map = BitmapFactory.decodeByteArray(bytes, 0, 0);
-                runOnUiThread(() -> ((ImageView) findViewById(R.id.activity_client_display)).setImageBitmap(map));
+                String img = in.readLine();
+                if(img != null) {
+                    byte[] bytes = decodeString(img);
+                    Bitmap map = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                    runOnUiThread(() -> ((ImageView) findViewById(R.id.activity_client_display)).setImageBitmap(map));
+                }
+                sleep(20);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -95,6 +77,16 @@ public class ClientActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    private byte[] decodeString(String string) {
+        String[] str = string.substring(1, string.length() - 1).replace(" ", "").split(",");
+        byte[] bytes = new byte[str.length];
+
+        for (int i = 0, len = bytes.length; i < len; i++) {
+            bytes[i] = Byte.parseByte(str[i].trim());
+        }
+        return bytes;
     }
 
     private void prepareView(Socket socket) {

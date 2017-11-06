@@ -53,41 +53,21 @@ public class ServerActivity extends AppCompatActivity {
             ByteBuffer buffer = image.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.capacity()];
             buffer.get(bytes);
-            System.out.println(bytes.length);
-            int counter = 0;
-            for (byte b : bytes) {
-                System.out.print(b);
-                counter++;
-                if((counter % 500) == 0){
-                    System.out.println();
-                }
-            }
-            System.out.println();
             String string = Arrays.toString(bytes);
-            System.out.println(string);
-            String[] str = string.substring(1, string.length()-1).replace(" ", "").split(",");
-            System.out.println(str.length);
-            for(String s : str){
-                System.out.print(s);
-            }
-            System.out.println();
             Bitmap map = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             ((ImageView) findViewById(R.id.activity_server_cam_preview)).setImageBitmap(map);
             PrintStream output = null;
             try {
-                output = new PrintStream(socket.getOutputStream());
-                output.println(string);
+                if(socket != null) {
+                    output = new PrintStream(socket.getOutputStream());
+                    output.println(string);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                if (null != output) {
-                    output.close();
-                }
             }
         });
         ch.takePicture();
     }
-
     private void chm() {
         chm.takePicture();
     }
