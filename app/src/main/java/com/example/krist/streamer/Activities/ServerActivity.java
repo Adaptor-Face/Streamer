@@ -40,6 +40,7 @@ public class ServerActivity extends AppCompatActivity {
             byte[] data = ImageUtils.imageToByteArray(i);
             PrintStream output = null;
             String string = Arrays.toString(data);
+            string = string.substring(1, string.length()-1).replace(" ","");
             try {
                 if(socket != null) {
                     output = new PrintStream(socket.getOutputStream());
@@ -49,7 +50,7 @@ public class ServerActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         } );
-        ch.takePicture();
+        ch.startImageStream();
     }
 
 
@@ -62,6 +63,8 @@ public class ServerActivity extends AppCompatActivity {
     private void prepareToStream(Socket socket) {
         System.out.println("Connected to " + socket.getInetAddress());
         this.socket = socket;
+        scl.stopServer();
+        scl = null;
     }
 
 
@@ -70,6 +73,7 @@ public class ServerActivity extends AppCompatActivity {
         if (scl != null) {
             scl.stopServer();
         }
+        ch.stopImageStream();
         super.onStop();
     }
 }

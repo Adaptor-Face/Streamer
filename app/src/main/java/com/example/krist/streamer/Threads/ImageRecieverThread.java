@@ -60,7 +60,7 @@ public class ImageRecieverThread extends Thread {
         }
     }
     private byte[] decodeString(String string) {
-        String[] str = string.substring(1, string.length() - 1).replace(" ", "").split(",");
+        String[] str = string.split(",");
         byte[] bytes = new byte[str.length];
 
         for (int i = 0, len = bytes.length; i < len; i++) {
